@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(grep:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "Bash(netstat:*)",
+      "Bash(npx vite --port 5173)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
