@@ -106,6 +106,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 <div align="center">
-  <p><b>Managed by TRIOMAV TECH PRIVATE LIMITED - INNOVATIONS DIVISION</b></p>
+  <p><b>Built by TrioMav Tech Private Limited - Innovations Division</b></p>
   <p>Built with ❤️ for a safer economy.</p>
 </div>

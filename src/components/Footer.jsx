@@ -52,6 +52,12 @@ export default function Footer() {
             </div>
           </div>
         </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-300 text-center">
+          <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">
+            Built by TrioMav Tech Private Limited - Innovations Division
+          </p>
+        </div>
       </div>
     </footer>
   );
