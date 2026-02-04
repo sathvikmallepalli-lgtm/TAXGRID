@@ -31,13 +31,53 @@ function calculateChecksum(gstin14) {
 }
 
 /**
+ * Clean common OCR errors from GSTIN
+ * @param {string} gstin - Raw GSTIN string
+ * @returns {string} - Cleaned GSTIN
+ */
+function cleanGSTIN(gstin) {
+  if (!gstin) return gstin;
+
+  let cleaned = gstin.replace(/[\s-]/g, '').toUpperCase();
+
+  // OCR Correction: If length is 15, try to correct common typos
+  // 27AAPFUO939F1ZV -> 27AAPFU0939F1ZV (O -> 0 in digits)
+  if (cleaned.length === 15 || cleaned.length === 16) {
+    // If 16 chars ending in 1, it might be an artifact (or user typed extra 1)
+    // But let's focus on character substitution first
+
+    // Split into parts based on standard GSTIN: 2(d) 5(a) 4(d) 1(a) 1(an) 1(Z) 1(an)
+    // We can't strictly split if it's messy, but we can try replacing O with 0 in likely numeric places
+
+    // Convert to array for manipulation
+    let chars = cleaned.split('');
+
+    // Fix first 2 chars (State Code) - should be digits
+    if (chars[0] === 'O') chars[0] = '0';
+    if (chars[1] === 'O') chars[1] = '0';
+
+    // Fix chars 7-10 (PAN numbers) - should be digits
+    // 012345678901234
+    // 27AAPFU0939F1ZV
+    //        ^^^^
+    for (let i = 7; i <= 10; i++) {
+      if (chars[i] === 'O') chars[i] = '0';
+    }
+
+    cleaned = chars.join('');
+  }
+
+  return cleaned;
+}
+
+/**
  * Validate GSTIN number
  * @param {string} gstin - GSTIN to validate
  * @returns {object} - Validation result with status and details
  */
 export function validateGSTIN(gstin) {
-  // Remove spaces and convert to uppercase
-  gstin = gstin.replace(/\s/g, '').toUpperCase();
+  // Remove spaces, convert to uppercase, and fix common OCR typos
+  gstin = cleanGSTIN(gstin);
 
   // Check length
   if (gstin.length !== 15) {

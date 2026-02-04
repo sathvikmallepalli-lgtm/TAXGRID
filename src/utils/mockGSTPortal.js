@@ -186,6 +186,24 @@ export const MOCK_GST_DATABASE = {
     lastFiledDate: '2026-01-21',
     eInvoiceEnabled: true,
     keywords: ['tea', 'darjeeling tea', 'darjeeling', 'mumbai', 'beverages']
+  },
+
+  // 11. USER REQUESTED - Demo Entry
+  '27AAPFU0939F1ZV': {
+    gstin: '27AAPFU0939F1ZV',
+    legalName: 'TAXGRID DEMO ENTERPRISE',
+    tradeName: 'TaxGrid Demo',
+    status: 'Active',
+    stateCode: '27',
+    stateName: 'Maharashtra',
+    address: '101, Tech Park, Pune - 411057',
+    registrationDate: '2022-05-15',
+    businessType: 'Partnership',
+    filingStatus: 'GREEN',
+    lastFiledReturn: 'GSTR-3B for December 2025',
+    lastFiledDate: '2026-01-05',
+    eInvoiceEnabled: true,
+    keywords: ['demo', 'user', 'test', 'pune']
   }
 };
 

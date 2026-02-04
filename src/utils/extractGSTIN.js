@@ -6,11 +6,56 @@
 export function extractGSTIN(text) {
   if (!text) return null;
 
-  // GSTIN pattern: 2 digits + 5 letters + 4 digits + 1 letter + 1 alphanumeric + Z + 1 alphanumeric
-  const pattern = /[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}/gi;
-  const matches = text.toUpperCase().match(pattern);
+  const cleanText = text.toUpperCase();
 
-  return matches ? matches[0] : null;
+  // Pattern 1: Strict GSTIN Pattern
+  const strictPattern = /[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}/g;
+  const strictMatches = cleanText.match(strictPattern);
+  if (strictMatches) return strictMatches[0];
+
+  // Pattern 2: Fuzzy GSTIN Pattern (Handles common OCR errors)
+  // [0-9O] for digits
+  // [A-Z0-9] for parts that get mixed up
+  // e.g. 0O7TAAACRS5055K1Z9 -> 07AAACR5055K1Z9
+  // We look for a 15-char sequence that looks ROUGHLY like a GSTIN
+
+  // This is a 15-char block starting with 2 digits/O, 5 letters, 4 digits/O, 1 letter, ...
+  const fuzzyPattern = /([0-9O]{2})([A-Z]{5})([0-9O]{4})([A-Z]{1})([1-9A-Z]{1})(Z)([0-9A-Z]{1})/g;
+
+  // Or even looser: just 15 alphanumeric that matches the structure broadly
+  // First 2: digits or O/I/L/B
+  // Next 5: letters
+  // Next 4: digits or O/I/L/B
+
+  // Let's try searching for the specific one mentioned: 0O7...
+  // The user gave: "0O7TAAACRS5055K1Z9" -> This is 17 chars long?
+  // 0O 7 TAAACR S 5055 K 1 Z 9
+  // 07AAACR5055K1Z9 is the target.
+  // 0O -> 0? 7 -> 7? 
+  // Let's just return the best candidate. 
+
+  // We try to find something that matches the PAN structure inside?
+  // PAN is [A-Z]{5}[0-9]{4}[A-Z]{1}
+  // Try to find a PAN-like sequence and expand outwards
+
+  const panPattern = /[A-Z]{5}[0-9O]{4}[A-Z]{1}/g;
+  const panMatches = cleanText.match(panPattern);
+
+  if (panMatches) {
+    for (const pan of panMatches) {
+      // Look at surroundings of the PAN
+      const index = cleanText.indexOf(pan);
+      // We expect 2 chars before (State) and 3 chars after (Entity+Z+Check)
+      if (index >= 2 && index + pan.length + 3 <= cleanText.length) {
+        const raw = cleanText.substring(index - 2, index + pan.length + 3);
+        // Basic cleanup on the candidate
+        const cleaned = raw.replace(/O/g, '0').replace(/I/g, '1');
+        return cleaned;
+      }
+    }
+  }
+
+  return null;
 }
 
 /**

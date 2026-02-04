@@ -13,9 +13,8 @@ export default function Home() {
         <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
         <div className="relative z-10">
-          <div className="inline-block px-4 py-1.5 mb-6 bg-blue-500/20 rounded-full border border-blue-400/30 backdrop-blur-sm">
-            <span className="text-blue-200 font-medium text-sm">🛡️ Trusted by 10,000+ Businesses</span>
-          </div>
+
+
 
           <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
             Tax Compliance <br />
@@ -80,11 +79,11 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div>
             <p className="text-4xl font-bold text-slate-900 mb-1">{FRAUD_STATISTICS.totalFraud}</p>
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Fraud Detected</p>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Nationwide GST Fraud</p>
           </div>
           <div>
             <p className="text-4xl font-bold text-slate-900 mb-1">{FRAUD_STATISTICS.fakeFirmsDetected}</p>
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Fake Firms</p>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Fake Firms (Official Data)</p>
           </div>
           <div>
             <p className="text-4xl font-bold text-slate-900 mb-1">100%</p>
