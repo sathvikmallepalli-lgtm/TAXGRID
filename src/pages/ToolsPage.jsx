@@ -5,35 +5,35 @@ export default function ToolsPage() {
     const tools = [
         {
             id: 'gst-validator',
-            name: 'GST Validator',
-            description: 'Verify Any GSTIN Instantly',
+            name: 'GSTIN Validator',
+            description: 'Verify GSTIN Format & Business Details',
             icon: Shield,
-            path: '/#validator',
+            path: '/validator',
             color: 'bg-blue-500'
         },
         {
-            id: 'ocr-scanner',
-            name: 'OCR Scanner',
-            description: 'Extract Data from Receipts',
-            icon: Scan,
-            path: '/#scanner',
-            color: 'bg-purple-500'
+            id: 'audit-shield',
+            name: 'Audit Shield (OCR + Analytics)',
+            description: 'Scan Receipts, Detect Fraud & Generate Reports',
+            icon: FileCheck,
+            path: '/audit-shield',
+            color: 'bg-emerald-600'
         },
         {
             id: 'gi-verification',
-            name: 'GI Location Verification',
-            description: 'Detect Geographical Indication Fraud',
+            name: 'GI Product Verification',
+            description: 'Verify Geographical Indication Authenticity',
             icon: MapPin,
             path: '/gi-verification',
             color: 'bg-orange-500'
         },
         {
-            id: 'audit-shield',
-            name: 'TaxGrid Audit Shield',
-            description: 'Generate PDF Verification Reports',
-            icon: FileCheck,
-            path: '/audit-shield',
-            color: 'bg-green-600'
+            id: 'search',
+            name: 'Business Search',
+            description: 'Search GSTIN Database by Keywords',
+            icon: Scan,
+            path: '/search',
+            color: 'bg-purple-500'
         },
     ];
 

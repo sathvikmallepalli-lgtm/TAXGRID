@@ -10,23 +10,26 @@ export default function BillSplitter({ initialAmount = 0 }) {
     { name: '', amount: 0, paid: false },
   ]);
 
-  // Update amounts when total or number of participants changes
-  useEffect(() => {
-    if (total > 0) {
-      const amountPerPerson = total / participants.length;
-      setParticipants(prev =>
-        prev.map(p => ({ ...p, amount: amountPerPerson }))
-      );
+  // Distribute total amount equally among participants
+  const updateEqualSplit = (newTotal, currentParticipants) => {
+    if (newTotal > 0 && currentParticipants.length > 0) {
+      const amountPerPerson = newTotal / currentParticipants.length;
+      return currentParticipants.map(p => ({ ...p, amount: amountPerPerson }));
     }
-  }, [total, participants.length]);
+    return currentParticipants.map(p => ({ ...p, amount: 0 }));
+  };
 
   const handleTotalChange = (e) => {
     const value = parseFloat(e.target.value) || 0;
     setTotal(value);
+    setParticipants(prev => updateEqualSplit(value, prev));
   };
 
   const handleAddParticipant = () => {
-    setParticipants([...participants, { name: '', amount: 0, paid: false }]);
+    setParticipants(prev => {
+      const newParticipants = [...prev, { name: '', amount: 0, paid: false }];
+      return updateEqualSplit(total, newParticipants);
+    });
   };
 
   const handleRemoveParticipant = (index) => {

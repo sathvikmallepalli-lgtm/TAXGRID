@@ -31,6 +31,7 @@ import {
   checkGIOrigin,
   getGIStatus
 } from './giProducts';
+import { verifyGSTINAPI } from './gstAPI';
 
 // ============================================================================
 // RE-EXPORTS (Make everything available from one place)
@@ -103,81 +104,120 @@ export function calculateTax(baseAmount, sellerStateCode, buyerStateCode, gstRat
 // ============================================================================
 
 /**
- * Assess overall risk level for a transaction
- * @param {object} validationResult - GSTIN validation result
- * @param {object} portalData - GST portal data
- * @param {object} giCheck - GI origin check result
- * @returns {object} - Risk assessment
+ * Calculate Business Age in Years
+ */
+function getBusinessAge(registrationDate) {
+  if (!registrationDate) return 0;
+  try {
+    const reg = new Date(registrationDate);
+    const now = new Date();
+    const diff = now - reg;
+    const ageDate = new Date(diff);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 🧠 ADVANCED TRUST SCORE ALGORITHM
+ * Calculates a 0-100 score based on multiple weighted factors.
+ */
+export function calculateTrustScore(validation, portalData, giCheck) {
+  let score = 50; // Base Score
+  let breakdown = [];
+
+  // 1. BASE VALIDATION (Critical)
+  if (!validation.valid) {
+    return { score: 0, breakdown: [{ label: 'Invalid GSTIN', points: -100 }] };
+  }
+
+  // 2. STATUS CHECK
+  if (portalData) {
+    if (portalData.status === 'Active') {
+      score += 20;
+      breakdown.push({ label: 'Active Status', points: +20 });
+    } else {
+      score -= 50; // Suspended/Cancelled
+      breakdown.push({ label: `Status: ${portalData.status}`, points: -50 });
+    }
+
+    // 3. FILING COMPLIANCE
+    if (portalData.filingStatus === 'GREEN') {
+      score += 20;
+      breakdown.push({ label: 'Timely Filings', points: +20 });
+    } else if (portalData.filingStatus === 'YELLOW') {
+      score -= 15;
+      breakdown.push({ label: 'Delayed Filings', points: -15 });
+    } else if (portalData.filingStatus === 'RED') {
+      score -= 40;
+      breakdown.push({ label: 'Non-Filer', points: -40 });
+    }
+
+    // 4. BUSINESS AGE (Stability Factor)
+    const age = getBusinessAge(portalData.registrationDate);
+    if (age >= 5) {
+      score += 15;
+      breakdown.push({ label: `Established Business (${age} yrs)`, points: +15 });
+    } else if (age >= 2) {
+      score += 10;
+      breakdown.push({ label: `Stable Business (${age} yrs)`, points: +10 });
+    } else {
+      breakdown.push({ label: `New Business (${age} yrs)`, points: 0 });
+    }
+
+    // 5. ENTITY TYPE (Trust Factor)
+    const trustedEntities = ['Public Limited Company', 'Government Department', 'Public Sector Undertaking'];
+    if (trustedEntities.includes(portalData.businessType)) {
+      score += 10;
+      breakdown.push({ label: 'High Trust Entity', points: +10 });
+    }
+  } else {
+    // No portal data found - Neutral/Low trust
+    score -= 10;
+    breakdown.push({ label: 'Data Unavailable', points: -10 });
+  }
+
+  // 6. NEGATIVE SIGNALS (GI Fraud, etc)
+  if (giCheck && giCheck.length > 0) {
+    score -= 30;
+    breakdown.push({ label: 'GI Fraud Detected', points: -30 });
+  }
+
+  // Cap Score 0-100
+  score = Math.max(0, Math.min(100, score));
+
+  return { score, breakdown };
+}
+
+/**
+ * Assess overall risk level for a transaction based on Trust Score
  */
 export function assessRisk(validationResult, portalData, giCheck) {
-  const reasons = [];
-  let level = 'LOW';
-  let color = '#22c55e'; // green
-  let score = 0; // 0-100, higher = more risky
+  const { score, breakdown } = calculateTrustScore(validationResult, portalData, giCheck);
 
-  // Check 1: GSTIN validity
-  if (!validationResult.valid) {
-    reasons.push('Invalid GSTIN format');
-    score += 100;
-    level = 'CRITICAL';
-    color = '#ef4444'; // red
-    return { level, color, score, reasons };
-  }
+  let level, color;
 
-  // Check 2: GSTIN status
-  if (portalData && portalData.status === 'Cancelled') {
-    reasons.push('GSTIN has been cancelled');
-    score += 100;
-    level = 'CRITICAL';
-    color = '#ef4444';
-    return { level, color, score, reasons };
-  }
-
-  if (portalData && portalData.status === 'Suspended') {
-    reasons.push('GSTIN is currently suspended');
-    score += 100;
-    level = 'CRITICAL';
-    color = '#ef4444';
-    return { level, color, score, reasons };
-  }
-
-  // Check 3: Filing status
-  if (portalData && portalData.filingStatus === 'RED') {
-    reasons.push('Business is a non-filer (last return filed 8+ months ago)');
-    score += 60;
+  if (score >= 80) {
+    level = 'LOW';
+    color = '#22c55e'; // Green
+  } else if (score >= 50) {
+    level = 'MEDIUM';
+    color = '#eab308'; // Yellow
+  } else if (score >= 30) {
     level = 'HIGH';
-    color = '#f97316'; // orange
-  } else if (portalData && portalData.filingStatus === 'YELLOW') {
-    reasons.push('Business has delayed GST filings');
-    score += 30;
-    if (level === 'LOW') {
-      level = 'MEDIUM';
-      color = '#eab308'; // yellow
-    }
-  }
-
-  // Check 4: GI fraud
-  if (giCheck && giCheck.length > 0) {
-    giCheck.forEach(alert => {
-      reasons.push(`GI Fraud: ${alert.product} should be from ${alert.expectedRegion}`);
-      score += 40;
-    });
-    if (level === 'LOW' || level === 'MEDIUM') {
-      level = 'HIGH';
-      color = '#f97316';
-    }
-  }
-
-  // If no issues found
-  if (reasons.length === 0) {
-    reasons.push('All checks passed');
+    color = '#f97316'; // Orange
+  } else {
+    level = 'CRITICAL';
+    color = '#ef4444'; // Red
   }
 
   return {
     level,
     color,
-    score,
-    reasons
+    score: 100 - score, // Legacy risk score is inverted (high risk = high score)
+    trustScore: score,  // New Trust Score
+    reasons: breakdown.map(b => `${b.label} (${b.points > 0 ? '+' : ''}${b.points})`)
   };
 }
 
@@ -265,13 +305,25 @@ export async function verifyInvoice(
     // Step 1: Validate GSTIN format
     const validation = validateGSTIN(gstin);
 
-    // Step 2: Fetch GST Portal data (simulated with delay)
+    // Step 2: Fetch GST data (live API when configured, else demo DB)
     let portalData = null;
     let portalFound = false;
+    let portalSourceLabel = 'TaxGrid Mock Database';
+    let portalNotice;
 
     if (validation.valid) {
-      portalData = await fetchGSTPortalData(gstin);
-      portalFound = portalData !== null;
+      const apiRes = await verifyGSTINAPI(gstin);
+      if (apiRes.success && apiRes.data) {
+        portalData = apiRes.data;
+        portalFound = true;
+        portalSourceLabel =
+          apiRes.source === 'MASTERS_INDIA'
+            ? 'Masters India GST API'
+            : apiRes.source === 'GST_PROXY'
+              ? 'GST API (server proxy)'
+              : 'TaxGrid Mock Database';
+        portalNotice = apiRes.notice;
+      }
     }
 
     // Step 3: Check GI Origin
@@ -290,25 +342,55 @@ export async function verifyInvoice(
     // Step 6: Get Recommendation
     const recommendation = getRecommendation(risk);
 
+    const v = validation;
+    const biz =
+      portalFound && portalData
+        ? {
+            legalName: portalData.legalName,
+            tradeName: portalData.tradeName,
+            category: portalData.businessType,
+            status: portalData.status,
+            filingStatus: portalData.filingStatus,
+            lastFiledReturn: portalData.lastFiledReturn,
+            lastFiledDate: portalData.lastFiledDate,
+            registrationDate: portalData.registrationDate,
+            address: portalData.address
+          }
+        : {
+            legalName: v.legalName,
+            tradeName: v.tradeName,
+            category: v.category,
+            status: v.status,
+            filingStatus: v.filingStatus,
+            lastFiledReturn: v.lastFiledReturn,
+            lastFiledDate: v.lastFiledDate,
+            registrationDate: v.registrationDate,
+            address: v.address
+          };
+
     // Step 7: Return comprehensive result
     return {
       success: true,
       timestamp: new Date().toISOString(),
 
-      // Validation
+      // Validation (includes business fields from live API or mock)
       validation: {
         isValid: validation.valid,
+        valid: validation.valid,
         gstin: validation.gstin || gstin,
         stateCode: validation.stateCode,
         stateName: validation.stateName,
         pan: validation.pan,
-        errors: validation.error ? [validation.error] : []
+        errors: validation.error ? [validation.error] : [],
+        error: validation.error,
+        ...biz
       },
 
       // Portal Data
       portalData: portalFound ? {
         found: true,
-        source: 'TaxGrid Mock Database',
+        source: portalSourceLabel,
+        notice: portalNotice,
         legalName: portalData.legalName,
         tradeName: portalData.tradeName,
         status: portalData.status,

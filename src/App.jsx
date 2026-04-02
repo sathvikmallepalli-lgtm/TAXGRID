@@ -6,6 +6,7 @@ import About from './components/About';
 import SearchPage from './pages/SearchPage';
 import GIVerificationPage from './pages/GIVerificationPage';
 import AuditShieldPage from './pages/AuditShieldPage';
+import ValidatorPage from './pages/ValidatorPage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<About />} />
           <Route path="/tools" element={<ToolsPage />} />
+          <Route path="/validator" element={<ValidatorPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/gi-verification" element={<GIVerificationPage />} />
           <Route path="/audit-shield" element={<AuditShieldPage />} />

@@ -13,7 +13,8 @@
       "Bash(timeout /t 5 /nobreak)",
       "Bash(npm install:*)",
       "Bash(gh repo view:*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(find:*)"
     ]
   }
 }
